@@ -1,0 +1,140 @@
+<! DOCTYPE html >
+< html >
+    < cabeça >
+        < title > Mapa 3 </ title >
+
+        < link  rel = " stylesheet " href = " https://unpkg.com/leaflet@1.3.4/dist/leaflet.css "
+        integridade = " sha512-puBpdR0798OZvTTbP4A8Ix / l + A4dHDD0DGqYW6RQ + 9jxkRFclaxxQb / SJAWZfWAkuyeQUytO7 + 7N4QKrDh + drA == "
+        crossorigin = "" />
+
+        < script  src = " https://unpkg.com/leaflet@1.3.4/dist/leaflet.js "
+        integridade = " sha512-nMMmRyTVoLYqjP9hrbed9S + FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA == "
+        crossorigin = "" > </ script >
+
+        < tipo de script  = " text / javascript " src = " ./dados/casospor10k.geojson " > </ script >
+
+        < estilo >
+          / * Opcional: ajuste os valores abaixo para alterar a aparência da legenda * /
+          . legenda {
+              preenchimento : 6 px  8 px ;
+              altura da linha : 18 px ;
+              fundo : rgba ( 255 , 255 , 255 , 0.9 );
+              sombra da caixa : 0  0  15 px  rgba ( 0 , 0 , 0 , 0,2 );
+              raio da borda : 5 px ;
+          }
+
+           / * Opcional: ajuste os valores abaixo para alterar a aparência das caixas de cores da legenda * /
+           . lenda  i {
+              largura : 18 px ;
+              altura : 18 px ;
+              flutuar : esquerda;
+              margem direita : 8 px ;
+              opacidade : 0,7 ;
+          }
+        </ style >
+
+    </ cabeça >
+
+    < corpo >
+        < div  id = " map " style = " height: 500px " > </ div >
+
+        < tipo de script  = " text / javascript " >
+
+          var  mapa  =  L . mapa ( 'mapa' ,  {
+              centro : [ 38.761113 ,  - 9.160908 ] ,
+              zoom : 10
+          } ) ;
+
+         L . tileLayer ( 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}' ,  {
+           atribuição : 'Dados do mapa © colaboradores do OpenStreetMap, CC-BY-SA, Imagens © Mapbox' ,
+           maxZoom : 11 ,
+           minZoom : 5 ,
+           ID : 'mapbox.light' ,
+           accessToken : 'pk.eyJ1IjoiY3VyZW1hbmdvIiwiYSI6ImNpcTQ4cGFwbDAxbmVmd25vZGNiOTVzeGEifQ.GWZByYkIft6eMRha69C8nw'
+         } ) . addTo ( mapa ) ;
+
+        função  getColor ( valor )  {
+             valor de  retorno >  10 ? '# 54278f' :
+                   valor  >  3   ? '# 756bb1' :
+                   valor  >  2   ? '# 9e9ac8' :
+                   valor  >  1   ? '# cbc9e2' :
+                                 '# f2f0f7' ;
+        }
+
+         estilo de função ( recurso ) {
+            retornar  {
+                fillColor : getColor ( feature . properties . Casos_23_1 ) ,    // pop_den é o nome do campo para os dados de densidade populacional
+                peso : 2 ,
+                opacidade : 1 ,
+                cor : "cinza" ,
+                fillOpacity : 0.9
+            } ;
+        }
+            
+        função de  destaqueFunção ( e )  {
+            // Obtenha acesso ao recurso que foi pairado no e.target
+             característica  var =  e . alvo ;
+
+            // Define uma borda cinza grossa no recurso quando como efeito de mouseover
+            // Ajuste os valores abaixo para alterar os estilos de destaque dos recursos ao passar o mouse
+            // Confira https://leafletjs.com/reference-1.3.4.html#path para obter mais opções para mudar de estilo
+            recurso . setStyle ( {
+                peso : 5 ,
+                cor : '# 666' ,
+                fillOpacity : 0.7
+            } ) ;
+
+            // Coloque o recurso destacado na frente para que a borda não colidir com os estados próximos
+            // Mas não para o IE, Opera ou Edge, pois eles têm problemas ao trazer bringToFront na passagem do mouse
+            se  ( ! L . Navegador . ie  && ! L . Navegador . opera  && ! L . Navegador . edge )  {
+                recurso . bringToFront ( ) ;
+            }
+        }
+            
+        var  geojson ;  // define uma variável para tornar a camada geojson acessível para a função usar   
+            
+        função  resetHighlight ( e )  {
+            geojson . resetStyle ( e . -alvo ) ;
+        }
+
+            
+        função  onEachFeature ( recurso ,  camada )  {
+            camada . on ( {
+                mouseover : highlightsFeature ,  // Faça o que é definido pela função destaqueFeature no mouseover
+                mouseout : resetHighlight ,     // Faça o que é definido pela função resetHighlight no mouseout
+            } ) ;
+        }
+        
+        GeoJSON  =  L . geoJson ( dados ,  {
+            estilo : estilo ,
+            onEachFeature : onEachFeature
+        } ) . bindTooltip ( função  ( camada ) {
+             camada de retorno . recurso . propriedades . Concelho 
+                   +  '<p style = "color: purple">'  +  camada . recurso . propriedades . Casos_23_1 . toString ( )  +  'casos ou 10.000 hab. </p> ' ;       
+        } ) . addTo ( mapa ) ;
+
+         var  legenda  =  L . controle ( { position : 'bottomright' } ) ;  // Experimente os outros três cantos, se quiser.
+
+          legenda . onAdd  =  função  ( mapa )  {
+
+              var  div  =  L . DomUtil . create ( 'div' ,  'legend' ) ,
+                  notas  =  [ 0 ,  32 ,  53 ,  87 ,  139 ] ;  // Os valores de quebra para definir os intervalos da população, observe que começamos a partir de 0 aqui
+
+              div . innerHTML  =  '<b> Densidade populacional em 2011 <br> </b>' ;  // O título da legenda, neste caso, é Densidade populacional 2011
+
+              // Passa pelas classes e gera um rótulo com um quadrado colorido para cada intervalo.
+              // Se você estiver criando um mapa semelhante de choropeth, não precisará alterar as linhas abaixo.
+              para  ( var  i  =  0 ;  i  <  notas . comprimento ;  i ++ )  {
+                  div . innerHTML  + =
+                  '<i style = "background:'  +  getColor ( notas [ i ]  +  1 )  +  '"> </i>'  +
+                  notas [ i ]  +  ( notas [ i  +  1 ] ? '& ndash;'  +  notas [ i  +  1 ]  +  '<br>' : '+' ) ;
+              }
+
+              return  div ;
+          } ;
+
+          legenda . addTo ( mapa ) ;
+
+        </ script >
+   </ corpo >
+</ html >
